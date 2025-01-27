@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Estoque</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background-color: #0078D4;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    nav {
+      display: flex;
+      justify-content: space-around;
+      background: #005A9E;
+      padding: 0.5rem;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    .container {
+      padding: 1rem;
+    }
+    .hidden {
+      display: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 0.5rem;
+      text-align: left;
+    }
+    th {
+      background-color: #0078D4;
+      color: white;
+    }
+    button {
+      background-color: #0078D4;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005A9E;
+    }
+    input, select {
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .filter-container {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .filter-container select {
+      width: auto;
+    }
+    .feedback {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 10px;
+      border: 1px solid #f5c6cb;
+      border-radius: 5px;
+      display: none;
+    }
+
+    .low-stock-alert {
+  background-color: #ffcc00; /* Cor de alerta */
+  color: #000;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  font-weight: bold;
+  text-align: center;
+}
+.hidden {
+  display: none;
+}
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Controle de Estoque</h1>
+  </header>
+  <nav>
+    <a href="#" onclick="showSection('products')">Produtos</a>
+    <a href="#" onclick="showSection('manage')">Gerenciar Produtos</a>
+    <a href="#" onclick="showSection('entry')">Entrada</a>
+    <a href="#" onclick="showSection('exit')">Saída</a>
+    <a href="#" onclick="showSection('log')">Log de Atividades</a>
+    <a href="#" onclick="showSection('lowStock')">Estoque Mínimo</a>
+  </nav>
+  <div class="container">
+    <!-- Produtos -->
+    <section id="products" class="hidden">
+      <h2>Cadastro de Produtos</h2>
+      <form id="productForm">
+        <input type="text" id="productName" placeholder="Nome do Produto" required>
+        <input type="number" id="productQuantity" placeholder="Quantidade Inicial" required>
+        <input type="text" id="productResponsible" placeholder="Nome de quem cadastrou" required>
+        <input type="number" id="productMinStock" placeholder="Estoque Mínimo" required>
+        <button type="submit">Adicionar Produto</button>
+      </form>
+      <h3>Lista de Produtos</h3>
+      <div>
+        <input type="text" id="searchBar" placeholder="Pesquisar produto...">
+        <button onclick="filterProducts()">Pesquisar</button>
+      </div>
+      <table id="productTable">
+        <thead>
+          <tr>
+            <th>Nome'</th>
+            <th>Quantidade</th>
+            <th>Estoque Mínimo</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Gerenciar Produtos -->
+    <section id="manage" class="hidden">
+      <h2>Gerenciamento Manual de Produtos</h2>
+      <form id="manageForm">
+        <select id="manageProduct"></select>
+        <input type="number" id="manageQuantity" placeholder="Nova Quantidade" required>
+        <input type="text" id="manageResponsible" placeholder="Nome de quem atualizou" required>
+        <button type="submit">Atualizar Quantidade</button>
+      </form>
+    </section>
+
+    <!-- Entrada -->
+    <section id="entry" class="hidden">
+      <h2>Entrada de Estoque</h2>
+      <form id="entryForm">
+        <select id="entryProduct"></select>
+        <input type="number" id="entryQuantity" placeholder="Quantidade" required>
+        <input type="text" id="entryBy" placeholder="Nome de quem realizou a entrada" required>
+        <button type="submit">Registrar Entrada</button>
+      </form>
+    </section>
+
+    <!-- Saída -->
+    <section id="exit" class="hidden">
+      <h2>Saída de Estoque</h2>
+      <form id="exitForm">
+        <select id="exitProduct"></select>
+        <input type="number" id="exitQuantity" placeholder="Quantidade" required>
+        <input type="text" id="exitBy" placeholder="Nome de quem retirou" required>
+        <input type="text" id="exitResponsible" placeholder="Nome de quem entregou" required>
+        <button type="submit">Registrar Saída</button>
+      </form>
+    </section>
+
+    <!-- Log de Atividades -->
+    <section id="log" class="hidden">
+      <h2>Log de Atividades</h2>
+      <div class="filter-container">
+        <select id="filterProduct">
+          <option value="">Todos os Produtos</option>
+        </select>
+        <select id="filterDay">
+          <option value="">Selecione um Dia</option>
+        </select>
+        <select id="filterMonth">
+          <option value="">Selecione um Mês</option>
+        </select>
+        <select id="filterYear">
+          <option value="">Selecione um Ano</option>
+        </select>
+        <button onclick="applyFilters()">Filtrar</button>
+      </div>      
+      <table id="logTable">
+        <thead>
+          <tr>
+            <th>Ação</th>
+            <th>Produto</th>
+            <th>Quantidade</th>
+            <th>Data</th>
+            <th>Responsável</th>
+            <th>Responsável pela Entrega</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="lowStock" class="hidden">
+      <div id="lowStockAlert" class="low-stock-alert hidden">
+        <p>Alerta: Existem produtos com estoque baixo ou igual ao mínimo!</p>
+      </div>
+  <h2>Relatório de Produtos com Estoque Mínimo</h2>
+  <table id="lowStockTable">
+    <thead>
+      <tr>
+        <th>Nome'</th>
+        <th>Quantidade</th>
+        <th>Estoque Mínimo</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+  </div>
+
+  <div id="feedback" class="feedback"></div>
+  
+
+  <script>
+    const productForm = document.getElementById('productForm');
+    const entryForm = document.getElementById('entryForm');
+    const exitForm = document.getElementById('exitForm');
+    const manageForm = document.getElementById('manageForm');
+    const productTable = document.getElementById('productTable').querySelector('tbody');
+    const entryProduct = document.getElementById('entryProduct');
+    const exitProduct = document.getElementById('exitProduct');
+    const manageProduct = document.getElementById('manageProduct');
+    const logTable = document.getElementById('logTable').querySelector('tbody');
+    const feedbackElement = document.getElementById('feedback');
+    const searchBar = document.getElementById('searchBar');
+
+    const filterProduct = document.getElementById('filterProduct');
+    const filterDay = document.getElementById('filterDay');
+    const filterMonth = document.getElementById('filterMonth');
+    const filterYear = document.getElementById('filterYear');
+
+    let products = JSON.parse(localStorage.getItem('products')) || [];
+    let log = JSON.parse(localStorage.getItem('log')) || [];
+
+    function showFeedback(message, isError = true) {
+      feedbackElement.textContent = message;
+      feedbackElement.style.backgroundColor = isError ? '#f8d7da' : '#d4edda';
+      feedbackElement.style.color = isError ? '#721c24' : '#155724';
+      feedbackElement.style.display = 'block';
+      setTimeout(() => feedbackElement.style.display = 'none', 5000);
+    }
+
+    function saveData() {
+      localStorage.setItem('products', JSON.stringify(products));
+      localStorage.setItem('log', JSON.stringify(log));
+    }
+
+    function renderProducts() {
+      const searchQuery = searchBar.value.toLowerCase();
+      productTable.innerHTML = '';
+      entryProduct.innerHTML = '';
+      exitProduct.innerHTML = '';
+      manageProduct.innerHTML = '';
+      filterProduct.innerHTML = '<option value="">Todos os Produtos</option>';
+
+      products
+        .filter(product => product.name.toLowerCase().includes(searchQuery))
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach((product) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${product.name}</td>
+            <td>${product.quantity}</td>
+            <td>${product.minStock}</td>
+            <td><button onclick="removeProduct('${product.name}')">Remover</button></td>
+            `;
+
+            if (product.quantity <= product.minStock) {
+  row.style.backgroundColor = '#ffcccc'; // Destaca produtos com estoque baixo em vermelho claro
+}
+
+
+          productTable.appendChild(row);
+
+          const option = document.createElement('option');
+          option.value = product.name;
+          option.textContent = product.name;
+          entryProduct.appendChild(option);
+          exitProduct.appendChild(option.cloneNode(true));
+          manageProduct.appendChild(option.cloneNode(true));
+          filterProduct.appendChild(option.cloneNode(true));
+        });
+    }
+
+    function renderLog() {
+      logTable.innerHTML = '';
+      log.forEach((entry, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${entry.action}</td>
+          <td>${entry.product}</td>
+          <td>${entry.quantity}</td>
+          <td>${entry.date}</td>
+          <td>${entry.responsible}</td>
+          <td>${entry.deliveryResponsible || 'Não especificado'}</td>
+          <td><button onclick="removeLogEntry(${index})">Remover</button></td>
+        `;
+        logTable.appendChild(row);
+      });
+    }
+
+    function filterProducts() {
+      renderProducts();
+    }
+
+
+    function applyFilters() {
+      const filteredLog = log.filter(entry => {
+        let matches = true;
+
+        // Filtro para o produto
+        if (filterProduct.value && entry.product !== filterProduct.value) matches = false;
+
+        // Filtro para o dia
+        if (filterDay.value && new Date(entry.date).getDate() !== parseInt(filterDay.value)) matches = false;
+
+        // Filtro para o mês
+        if (filterMonth.value && new Date(entry.date).getMonth() + 1 !== parseInt(filterMonth.value)) matches = false;
+
+        // Filtro para o ano
+        if (filterYear.value && new Date(entry.date).getFullYear() !== parseInt(filterYear.value)) matches = false;
+
+        return matches;
+      });
+
+      renderLog(filteredLog);
+    }
+
+    function renderFilters() {
+      // Preenche o filtro de ano
+      const years = [...new Set(log.map(entry => new Date(entry.date).getFullYear()))];
+      years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = `Ano ${year}`;
+        filterYear.appendChild(option);
+      });
+
+      // Preenche o filtro de mês
+      const months = [...new Set(log.map(entry => new Date(entry.date).getMonth() + 1))];
+      months.forEach(month => {
+        const option = document.createElement('option');
+        option.value = month;
+        option.textContent = `Mês ${month}`;
+        filterMonth.appendChild(option);
+      });
+
+      // Preenche o filtro de dia
+      const days = [...new Set(log.map(entry => new Date(entry.date).getDate()))];
+      days.forEach(day => {
+        const option = document.createElement('option');
+        option.value = day;
+        option.textContent = `Dia ${day}`;
+        filterDay.appendChild(option);
+      });
+    }
+
+    // Chame renderFilters para preencher os filtros ao carregar os dados
+    renderFilters();
+
+    function renderFilteredLog(filteredLog) {
+      logTable.innerHTML = '';
+      filteredLog.forEach(entry => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${entry.action}</td>
+          <td>${entry.product}</td>
+          <td>${entry.quantity}</td>
+          <td>${entry.date}</td>
+          <td>${entry.responsible}</td>
+          <td>${entry.deliveryResponsible || 'Não especificado'}</td>
+          <td><button onclick="removeLogEntry(${filteredLog.indexOf(entry)})">Remover</button></td>
+        `;
+        logTable.appendChild(row);
+      });
+    }
+
+    // Função para remover uma entrada de log com verificação de senha
+function removeLogEntry(index) {
+  const password = prompt("Digite a senha de Admin para remover esta atividade:");
+
+  if (password === "cdeteste2025") {
+    log.splice(index, 1);
+    saveData();
+    renderLog();
+    showFeedback('Entrada do log removida com sucesso!', false);
+  } else {
+    showFeedback('Senha incorreta. Ação não realizada.', true);
+  }
+}
+
+
+    function removeProduct(name) {
+      products = products.filter(product => product.name !== name);
+      saveData();
+      renderProducts();
+      showFeedback('Produto removido com sucesso!', false);
+    }
+
+    function showSection(sectionId) {
+      document.querySelectorAll('section').forEach(section => section.classList.add('hidden'));
+      document.getElementById(sectionId).classList.remove('hidden');
+    }
+
+    function removeProduct(name) {
+  products = products.filter(product => product.name !== name);
+  saveData();
+  renderProducts();
+  renderLowStockReport(); // Atualizar tabela de estoque mínimo
+  showFeedback('Produto removido com sucesso!', false);
+}
+
+function saveData() {
+  localStorage.setItem('products', JSON.stringify(products));
+  localStorage.setItem('log', JSON.stringify(log));
+}
+
+function loadData() {
+  const storedProducts = localStorage.getItem('products');
+  const storedLog = localStorage.getItem('log');
+  
+  products = storedProducts ? JSON.parse(storedProducts) : [];
+  log = storedLog ? JSON.parse(storedLog) : [];
+}
+
+// Carregar os dados ao iniciar
+loadData();
+renderProducts();
+renderLog();
+renderLowStockReport(); // Isso garante que o relatório de estoque mínimo seja gerado com os dados salvos
+
+
+
+    // Inicializar
+    renderProducts();
+    renderLog();
+
+    // Adicionar produto
+    productForm.addEventListener('submit',  (e) => {
+      e.preventDefault();
+      const name = document.getElementById('productName').value;
+      const quantity = parseInt(document.getElementById('productQuantity').value);
+      const responsible = document.getElementById('productResponsible').value;
+      const minStock = parseInt(document.getElementById('productMinStock').value);
+
+
+      if (name && quantity && responsible) {
+        products.push({ name, quantity, minStock, responsible });
+        saveData();
+        renderProducts();
+        renderLowStockReport(); // Atualizar tabela de estoque mínimo
+        showFeedback('Produto adicionado com sucesso!', false);
+      } else {
+        showFeedback('Preencha todos os campos!', true);
+      }
+
+      productForm.reset();
+});
+
+    // Registrar entrada
+    entryForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const product = entryProduct.value;
+      const quantity = parseInt(document.getElementById('entryQuantity').value);
+      const responsible = document.getElementById('entryBy').value;
+
+      if (product && quantity && responsible) {
+        const productIndex = products.findIndex(p => p.name === product);
+        if (productIndex !== -1) {
+          products[productIndex].quantity += quantity;
+          log.push({
+            action: 'Entrada',
+            product,
+            quantity,
+            date: new Date().toLocaleString(),
+            responsible,
+            deliveryResponsible: ''
+          });
+          saveData();
+          renderProducts();
+          renderLog();
+          showFeedback('Entrada registrada com sucesso!', false);
+        }
+      } else {
+        showFeedback('Preencha todos os campos!', true);
+      }
+
+      if (productIndex !== -1) {
+  products[productIndex].quantity += quantity;
+  log.push({
+    action: 'Entrada',
+    product,
+    quantity,
+    date: new Date().toLocaleString(),
+    responsible,
+    deliveryResponsible: ''
+  });
+  saveData();
+  renderProducts();
+  renderLog();
+  renderLowStockReport(); // Atualizar tabela de estoque mínimo
+  showFeedback('Entrada registrada com sucesso!', false);
+}
+
+      
+      entryForm.reset();
+    });
+
+    // Registrar saída
+    exitForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const product = exitProduct.value;
+      const quantity = parseInt(document.getElementById('exitQuantity').value);
+      const responsible = document.getElementById('exitBy').value;
+      const deliveryResponsible = document.getElementById('exitResponsible').value;
+
+      if (product && quantity && responsible && deliveryResponsible) {
+        const productIndex = products.findIndex(p => p.name === product);
+        if (productIndex !== -1 && products[productIndex].quantity >= quantity) {
+          products[productIndex].quantity -= quantity;
+          log.push({
+            action: 'Saída',
+            product,
+            quantity,
+            date: new Date().toLocaleString(),
+            responsible,
+            deliveryResponsible
+          });
+          saveData();
+          renderProducts();
+          renderLog();
+          showFeedback('Saída registrada com sucesso!', false);
+        } else {
+          showFeedback('Quantidade insuficiente!', true);
+        }
+      } else {
+        showFeedback('Preencha todos os campos!', true);
+      }
+      
+      if (productIndex !== -1 && products[productIndex].quantity >= quantity) {
+  products[productIndex].quantity -= quantity;
+  log.push({
+    action: 'Saída',
+    product,
+    quantity,
+    date: new Date().toLocaleString(),
+    responsible,
+    deliveryResponsible
+  });
+  saveData();
+  renderProducts();
+  renderLog();
+  renderLowStockReport(); // Atualizar tabela de estoque mínimo
+  showFeedback('Saída registrada com sucesso!', false);
+}
+
+
+      exitForm.reset();
+    });
+
+    // Atualizar quantidade de produto
+    manageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const product = manageProduct.value;
+      const quantity = parseInt(document.getElementById('manageQuantity').value);
+      const responsible = document.getElementById('manageResponsible').value;
+
+      if (product && quantity && responsible) {
+        const productIndex = products.findIndex(p => p.name === product);
+        if (productIndex !== -1) {
+          products[productIndex].quantity = quantity;
+          log.push({
+            action: 'Atualização',
+            product,
+            quantity,
+            date: new Date().toLocaleString(),
+            responsible,
+            deliveryResponsible: ''
+          });
+          saveData();
+          renderProducts();
+          renderLog();
+          renderLowStockReport();
+          showFeedback('Quantidade atualizada com sucesso!', false);
+        }
+      } else {
+        showFeedback('Preencha todos os campos!', true);
+      }
+      if (products[productIndex].quantity < products[productIndex].minStock) {
+  showFeedback(`Atenção: O estoque do produto "${product}" está abaixo do mínimo!`, true);
+}
+      manageForm.reset();
+    });
+
+    function renderLowStockReport() {
+  const lowStockTable = document.getElementById('lowStockTable').querySelector('tbody');
+  const lowStockAlert = document.getElementById('lowStockAlert'); // Seleciona o banner de alerta
+  lowStockTable.innerHTML = '';
+
+  // Filtra os produtos com estoque baixo ou igual ao mínimo
+  const lowStockProducts = products.filter(product => product.quantity <= product.minStock);
+  
+  if (lowStockProducts.length > 0) {
+    lowStockAlert.classList.remove('hidden'); // Exibe o alerta se houver produtos com estoque baixo
+  } else {
+    lowStockAlert.classList.add('hidden'); // Esconde o alerta caso contrário
+  }
+
+  // Preenche a tabela com os produtos de estoque baixo
+  lowStockProducts.forEach(product => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${product.name}</td>
+      <td>${product.quantity}</td>
+      <td>${product.minStock}</td>
+    `;
+    lowStockTable.appendChild(row);
+  });
+}
+
+
+  </script>
+</body>
+</html>
